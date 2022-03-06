@@ -1,0 +1,20 @@
+{
+  "name": "@axel669/event-bridge",
+  "version": "1.0.0",
+  "description": "pubsub-ish event emitter for node/browser with some neat features",
+  "main": "index.js",
+  "scripts": {
+    "build": "rollup -c"
+  },
+  "keywords": [
+    "event",
+    "emitter",
+    "pubsub",
+    "bridge"
+  ],
+  "author": "Axel",
+  "license": "MIT",
+  "devDependencies": {
+    "rollup": "^2.69.2"
+  }
+}
