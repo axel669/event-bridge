@@ -1,6 +1,6 @@
 {
   "name": "@axel669/event-bridge",
-  "version": "1.0.1",
+  "version": "1.0.0",
   "description": "pubsub-ish event emitter for node/browser with some neat features",
   "main": "index.js",
   "scripts": {
