@@ -1,6 +1,19 @@
 var EventBridge = (function () {
     'use strict';
 
+    //  Hand rolled loops and splice are used for performance reasons.
+    //  Normally I wouldn't be concerned with the difference, but with the level
+    //      this lib operates at, I want to get as much performance as possible.
+
+    const each = (array, action) => {
+        if (array === undefined) {
+            return
+        }
+        for (let index = 0; index < array.length; index += 1) {
+            action(array[index]);
+        }
+    };
+
     const tracePath = (type) => type.split(".").reduceRight(
         (list, _, index, parts) => {
             const next = [
@@ -18,51 +31,91 @@ var EventBridge = (function () {
     const EventBridge = () => {
         const handlers = {};
 
-        const on = (type, handler) => {
-            handlers[type] = [
-                ...(handlers[type] ?? []),
-                handler
-            ];
-
-            return () => {
-                if (handlers[type] === undefined) {
-                    return
-                }
-                handlers[type] = handlers[type].filter(
-                    h => h !== handler
-                );
+        const addHandler = (type, handler, count) => {
+            handlers[type] = handlers[type] || [];
+            const entry = {
+                handler,
+                count,
+            };
+            handlers[type].push(entry);
+            return entry
+        };
+        const removeHandler = (type, entry) => {
+            if (handlers[type] === undefined) {
+                return
             }
+            const index = handlers[type].indexOf(entry);
+            if (index === -1) {
+                return
+            }
+            handlers[type].splice(index, 1);
+        };
+        const on = (type, handler) => {
+            const entry = addHandler(type, handler, Number.POSITIVE_INFINITY);
+            return () => removeHandler(type, entry)
         };
         const once = (type, handler) => {
-            let called = false;
-            const wrapped = (evt) => {
-                if (called) {
-                    return
-                }
-                called = true;
-                unsub();
-                handler(evt);
-            };
-            const unsub = on(type, wrapped);
+            const entry = addHandler(type, handler, 1);
+            return () => removeHandler(type, entry)
         };
 
-        const emit = async (evt) => {
-            const type = evt.type;
+        const emit = async (type, data) => {
+            const evt = { type, data };
 
             const paths = tracePath(type);
 
-            for (const path of paths) {
-                for (const handler of handlers[path] ?? []) {
-                    queueMicrotask(
-                        () => handler(evt)
-                    );
-                }
-            }
+            const remove = [];
+            each(
+                paths,
+                (path) => each(
+                    handlers[path],
+                    (entry) => {
+                        entry.count -= 1;
+                        queueMicrotask(
+                            () => entry.handler({
+                                source: path,
+                                ...evt
+                            })
+                        );
+                        if (entry.count === 0) {
+                            remove.push([path, entry]);
+                        }
+                    }
+                )
+            );
+            each(
+                remove,
+                (info) => removeHandler(...info)
+            );
         };
 
         const removeAll = () => {
             for (const key of Object.keys(handlers)) {
                 delete handlers[key];
+            }
+            for (const key of Object.getOwnPropertySymbols(handlers)) {
+                delete handlers[key];
+            }
+        };
+
+        const forward = (dest) => on(
+            "*",
+            (evt) => dest.emit(evt.type, evt.data)
+        );
+        const pull = (source, types) => {
+            const handlers = types.map(
+                (type) => [
+                    type,
+                    (evt) => emit(type, evt)
+                ]
+            );
+            for (const pair of handlers) {
+                source.addEventListener(pair[0], pair[1]);
+            }
+            return () => {
+                for (const pair of handlers) {
+                    source.removeEventListener(pair[0], pair[1]);
+                }
             }
         };
 
@@ -70,6 +123,8 @@ var EventBridge = (function () {
             on,
             once,
             emit,
+            forward,
+            pull,
             removeAll,
         }
     };

@@ -1,11 +1,38 @@
 const EventBridge = require("../../index")
 
+const sources = [
+    ["test", { a: 10, b: 12 }],
+    ["test.nested", { a: 10, b: 12 }],
+    ["test.wat", { a: 10, b: 12 }],
+]
+const expected = [
+    sources[0][1],
+    sources[1][1],
+    sources[1][1],
+    sources[2][1],
+]
+
+const valueChecker = (() => {
+    let next = 0
+
+    return (evt) => {
+        const expectedObject = expected[next]
+        next += 1
+        if (evt.data !== expectedObject) {
+            console.log("out of order at ", next)
+        }
+    }
+})()
+
 const bridge = EventBridge()
+bridge.on("test", valueChecker)
+bridge.on("test.*", valueChecker)
+bridge.on("test.nested", valueChecker)
 
-bridge.on("test", evt => console.log("test", evt))
-bridge.on("test.nested", evt => console.log("test.nested", evt))
-bridge.on("test.*", evt => console.log("test.*", evt))
+const other = EventBridge()
+other.on("*", console.log)
+bridge.forward(other)
 
-bridge.emit({ type: "test", a: 10, b: 12 })
-bridge.emit({ type: "test.nested", a: 10, b: 12 })
-bridge.emit({ type: "test.wat", a: 10, b: 12 })
+for (const [type, source] of sources) {
+    bridge.emit(type, source)
+}

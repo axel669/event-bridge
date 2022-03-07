@@ -4,7 +4,8 @@
   "description": "pubsub-ish event emitter for node/browser with some neat features",
   "main": "index.js",
   "scripts": {
-    "build": "rollup -c"
+    "build": "rollup -c",
+    "test": "node test/node/basic.test.js"
   },
   "keywords": [
     "event",
