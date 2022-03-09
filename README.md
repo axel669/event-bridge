@@ -32,12 +32,14 @@ listener has been triggered).
 - `data:Any` Data to attach to the event
 Emits an event to the appropriate listeners.
 
-### forward(destEventBridge)
-- `destEventBridge` The EventBridge to forward events to
-Forwards all events from the current bridge to another one. Returns a function
-to cancel the forwarding (like the on function).
+### pull(source, prefix)
+- `source:EventBridge` The EventBridge to pull events from
+- `prefix:String` *Optional* A prefix to attach to the event type when
+    pulling. If nothing is given, will use the exact event type.
+Pulls all events from the given bridge to the current one. Returns a function
+to cancel the pulling (like the on function).
 
-### pull(source, types)
+### bind(source, types)
 - `source:EventEmitter` The source to pull events from. An EventEmitter is any
     object that has `addEventListener` and `removeEventListener` functions.
 - `type:Array[String]` The list of event types to pull from the source

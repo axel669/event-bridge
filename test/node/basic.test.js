@@ -31,7 +31,8 @@ bridge.on("test.nested", valueChecker)
 
 const other = EventBridge()
 other.on("*", console.log)
-bridge.forward(other)
+other.pull(bridge, "node")
+other.pull(bridge)
 
 for (const [type, source] of sources) {
     bridge.emit(type, source)

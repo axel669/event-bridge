@@ -98,11 +98,14 @@ var EventBridge = (function () {
             }
         };
 
-        const forward = (dest) => on(
-            "*",
-            (evt) => dest.emit(evt.type, evt.data)
-        );
-        const pull = (source, types) => {
+        const pull = (source, prefix = null) => {
+            const forwardPrefix = prefix ? `${prefix}.` : "";
+            return source.on(
+                "*",
+                (evt) => emit(`${forwardPrefix}${evt.type}`, evt.data)
+            )
+        };
+        const bind = (source, types) => {
             const handlers = types.map(
                 (type) => [
                     type,
@@ -123,8 +126,8 @@ var EventBridge = (function () {
             on,
             once,
             emit,
-            forward,
             pull,
+            bind,
             removeAll,
         }
     };

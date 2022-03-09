@@ -37,8 +37,11 @@
 
             const other = EventBridge()
             other.on("*", console.log)
-            bridge.forward(other)
-            other.pull(window, ["click"])
+            // bridge.forward(other, "bridge")
+            // bridge.forward(other)
+            other.pull(bridge, "bridge")
+            other.pull(bridge)
+            other.bind(window, ["click"])
 
             for (const [type, source] of sources) {
                 bridge.emit(type, source)
